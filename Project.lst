@@ -1,0 +1,206 @@
+Microsoft (R) Macro Assembler (x64) Version 14.23.28105.4   05/06/21 10:57:27
+eightBall.asm						     Page 1 - 1
+
+
+				; Daniel St Andrews
+				; Magic 8 ball emulator
+				; Calling a subroutine in 64-bit mode    (eightBall.asm)
+
+				 ;Irvine64 Prototypes
+				ExitProcess proto
+				WriteHex64 PROTO         ; Irvine64 library
+				Crlf PROTO               ; Irvine64 library
+
+				WriteString proto
+				ReadString PROTO
+
+				WriteInt64 proto
+				ReadInt64 proto
+
+				Random64 proto
+				RandomRange proto
+				Randomize proto
+
+
+				 ;Add appropriate prompts:
+ 00000000			.data
+ 00000000 50 69 63 6B 20		prompt1 byte  "Pick your lucky number:  ", 0
+	   79 6F 75 72 20
+	   6C 75 63 6B 79
+	   20 6E 75 6D 62
+	   65 72 3A 20 20
+	   00
+ 0000001A 57 68 61 74 20		prompt2 byte  "What is your question?  ", 0
+	   69 73 20 79 6F
+	   75 72 20 71 75
+	   65 73 74 69 6F
+	   6E 3F 20 20 00
+ 00000033 4D 61 67 69 63		prompt3 byte  "Magic 8 Ball says:  ", 0
+	   20 38 20 42 61
+	   6C 6C 20 73 61
+	   79 73 3A 20 20
+	   00
+ 00000048 49 74 20 69 73		ans1 byte  "It is certain  ", 0
+	   20 63 65 72 74
+	   61 69 6E 20 20
+	   00
+ 00000058 4F 75 74 6C 6F		ans2 byte  "Outlook Good  ", 0
+	   6F 6B 20 47 6F
+	   6F 64 20 20 00
+ 00000067 44 6F 6E 27 74		ans3 byte  "Don't count on it  ", 0
+	   20 63 6F 75 6E
+	   74 20 6F 6E 20
+	   69 74 20 20 00
+ 0000007B 4D 79 20 73 6F		ans4 byte  "My sources say no  ", 0
+	   75 72 63 65 73
+	   20 73 61 79 20
+	   6E 6F 20 20 00
+ 0000008F 42 65 74 74 65		ans5 byte  "Better not tell you now  ", 0
+	   72 20 6E 6F 74
+	   20 74 65 6C 6C
+	   20 79 6F 75 20
+	   6E 6F 77 20 20
+	   00
+ 000000A9				keyVal QWORD ?
+	   0000000000000000
+ 000000B1 05				divisor byte 5
+					
+ 00000000			.code
+ 00000000			 main PROC
+					;Output message to ask for lucky number:
+ 00000000  48/ BA			MOV RDX, OFFSET prompt1
+	   0000000000000000 R
+ 0000000A  E8 00000000 E		CALL WriteString
+ 0000000F  E8 00000000 E		call Crlf
+ 00000014  E8 00000000 E		Call ReadInt64
+ 00000019  48/ 89 05			MOV keyVal, RAX
+	   000000A9 R
+
+					; Determine random number:
+ 00000020  E8 00000000 E		Call Randomize
+ 00000025  E8 00000000 E		Call Random64
+
+					; Convert number to the appropriate range:
+ 0000002A  48/ B8			MOV RAX, OFFSET keyVal
+	   00000000000000A9 R
+ 00000034  8B 00			MOV EAX, [RAX]
+ 00000036  E8 00000000 E		call RandomRange
+ 0000003B  50				PUSH RAX
+					
+					;Output message to ask for question:
+ 0000003C  BA 0000001A R	 	MOV EDX, OFFSET prompt2
+ 00000041  E8 00000000 E		CALL WriteString
+ 00000046  E8 00000000 E		call Crlf
+ 0000004B  48/ C7 C1			MOV RCX, 51
+	   00000033
+ 00000052  E8 00000000 E		CALL Readstring
+
+					;Output message to to answer question:
+ 00000057  48/ BA			MOV RDX, OFFSET prompt3
+	   0000000000000033 R
+ 00000061  E8 00000000 E		CALL WriteString
+ 00000066  E8 00000000 E		call Crlf
+ 0000006B  48/ C7 C2			MOV RDX, 0
+	   00000000
+ 00000072  58				POP RAX
+
+					;Determine result:
+ 00000073  F6 35 000000B1 R		DIV divisor
+ 00000079  48/ 83 F8 00			CMP RAX, 00
+ 0000007D  74 18			JE THEN1
+ 0000007F  48/ 83 F8 01			CMP RAX, 1
+ 00000083  74 1E			JE THEN2
+ 00000085  48/ 83 F8 02			CMP RAX, 2
+ 00000089  74 24			JE THEN3
+ 0000008B  48/ 83 F8 03			CMP RAX, 3
+ 0000008F  74 2A			JE THEN4
+ 00000091  48/ 83 F8 04			CMP RAX, 4
+ 00000095  74 30			JE THEN5
+
+ 00000097				THEN1:
+ 00000097  48/ BA			MOV RDX, OFFSET ans1
+	   0000000000000048 R
+ 000000A1  EB 30			JMP ENDIF1
+
+ 000000A3				THEN2:
+ 000000A3  48/ BA			MOV RDX, OFFSET ans2
+	   0000000000000058 R
+ 000000AD  EB 24			JMP ENDIF1
+
+ 000000AF				THEN3:
+ 000000AF  48/ BA			MOV RDX, OFFSET ans3
+	   0000000000000067 R
+ 000000B9  EB 18			JMP ENDIF1
+
+ 000000BB				THEN4:
+ 000000BB  48/ BA			MOV RDX, OFFSET ans4
+	   000000000000007B R
+ 000000C5  EB 0C			JMP ENDIF1
+
+ 000000C7				THEN5:
+ 000000C7  48/ BA			MOV RDX, OFFSET ans5
+	   000000000000008F R
+ 000000D1  EB 00			JMP ENDIF1
+
+ 000000D3				ENDIF1:
+					;Output the message
+ 000000D3  E8 00000000 E		call WriteString			;Output message
+ 000000D8  E8 00000000 E		call Crlf
+
+ 000000DD  B9 00000000		 mov  ecx,0				; Process return code
+ 000000E2  E8 00000000 E	 call    ExitProcess
+
+ 000000E7			main ENDP
+				END
+
+				comment $
+
+				~~~~~~~~~~~~~~~~~~~~~~
+
+$
+Microsoft (R) Macro Assembler (x64) Version 14.23.28105.4   05/06/21 10:57:27
+eightBall.asm						     Symbols 2 - 1
+
+
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+Crlf . . . . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+ExitProcess  . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+Random64 . . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+RandomRange  . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+Randomize  . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+ReadInt64  . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+ReadString . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+WriteHex64 . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+WriteInt64 . . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+WriteString  . . . . . . . . . .	P 	 00000000 Length= 00000000 External
+main . . . . . . . . . . . . . .	P 	 00000000 _TEXT	Length= 000000E7 Public
+  THEN1  . . . . . . . . . . . .	L 	 00000097 _TEXT	
+  THEN2  . . . . . . . . . . . .	L 	 000000A3 _TEXT	
+  THEN3  . . . . . . . . . . . .	L 	 000000AF _TEXT	
+  THEN4  . . . . . . . . . . . .	L 	 000000BB _TEXT	
+  THEN5  . . . . . . . . . . . .	L 	 000000C7 _TEXT	
+  ENDIF1 . . . . . . . . . . . .	L 	 000000D3 _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+ans1 . . . . . . . . . . . . . .	Byte	 00000048 _DATA	
+ans2 . . . . . . . . . . . . . .	Byte	 00000058 _DATA	
+ans3 . . . . . . . . . . . . . .	Byte	 00000067 _DATA	
+ans4 . . . . . . . . . . . . . .	Byte	 0000007B _DATA	
+ans5 . . . . . . . . . . . . . .	Byte	 0000008F _DATA	
+divisor  . . . . . . . . . . . .	Byte	 000000B1 _DATA	
+keyVal . . . . . . . . . . . . .	QWord	 000000A9 _DATA	
+prompt1  . . . . . . . . . . . .	Byte	 00000000 _DATA	
+prompt2  . . . . . . . . . . . .	Byte	 0000001A _DATA	
+prompt3  . . . . . . . . . . . .	Byte	 00000033 _DATA	
+
+	   0 Warnings
+	   0 Errors
